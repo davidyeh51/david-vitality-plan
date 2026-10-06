@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>David 精力維持計畫 v1.0 | 數據追蹤儀表板</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Chart.js & Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .dark .glass-card {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.7);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-teal-500 selection:text-white">
+
+  <!-- 頂部導航列 -->
+  <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- 標誌與標題 -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-teal-500/20">
+          <i class="ph-bold ph-lightning text-xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">David 精力維持計畫</h1>
+            <span class="px-2 py-0.5 text-xs font-extrabold bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 rounded-md">v1.0 定版</span>
+          </div>
+          <p class="text-xs text-slate-500 hidden sm:block">4 週漸進養成 · 瘦體重守門員 · 雙預算熱量制</p>
+        </div>
+      </div>
+
+      <!-- 右側快速操作按鈕 -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- 回知識門戶與簡報 -->
+        <a href="index.html" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition border border-slate-300 dark:border-slate-700">
+          <i class="ph-bold ph-arrow-left"></i> 知識門戶
+        </a>
+        <a href="slides.html" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-sm transition">
+          <i class="ph-bold ph-presentation"></i> 簡報 (15頁)
+        </a>
+
+        <!-- 雲端同步狀態徽章 -->
+        <button onclick="openModal('gasSyncModal')" id="gasStatusHeaderBadge" class="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition">
+          <span class="w-2 h-2 rounded-full bg-slate-400"></span> 本地模式 (點擊設定 Sheet 同步)
+        </button>
+
+        <!-- 每週量測按鈕 -->
+        <button onclick="openModal('weeklyMeasureModal')" class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition">
+          <i class="ph-bold ph-scales"></i> 週日體脂量測
+        </button>
+
+        <!-- 設定按鈕 -->
+        <button onclick="openModal('gasSyncModal')" title="Google Sheets 同步設定" class="p-2 rounded-lg text-slate-500 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-slate-800 transition">
+          <i class="ph-bold ph-gear text-lg"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主內容容器 -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- 頂部四大關鍵指標卡片 (KPIs) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      
+      <!-- 1. 當前體重與 7 日均 -->
+      <div class="glass-card rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+          <span>體重指標</span>
+          <i class="ph-bold ph-trend-down text-teal-600 text-base"></i>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="metricCurrentWeight" class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">86.0 kg</span>
+        </div>
+        <div class="mt-1 flex items-center justify-between text-xs">
+          <span id="metric7DayAvgWeight" class="text-slate-500 font-medium">7日均重: 86.0 kg</span>
+          <span id="metricWeightProgress" class="text-teal-600 font-bold">目標 84.2~84.6</span>
+        </div>
+        <div class="absolute -right-2 -bottom-2 opacity-5 pointer-events-none">
+          <i class="ph-fill ph-barbell text-6xl"></i>
+        </div>
+      </div>
+
+      <!-- 2. 瘦體重（守住 ≥ 60.5kg） -->
+      <div class="glass-card rounded-2xl p-4 shadow-sm relative overflow-hidden border-teal-200 dark:border-teal-900/60 bg-gradient-to-br from-teal-50/50 to-white">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+          <span class="font-bold text-teal-800">體脂與瘦體重 (★★★ 最高紅線)</span>
+          <i class="ph-bold ph-shield-check text-teal-600 text-base"></i>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="metricLeanMass" class="text-2xl sm:text-3xl font-extrabold text-teal-800 tracking-tight">瘦體重: 61.1 kg</span>
+        </div>
+        <div class="mt-1 flex items-center justify-between text-xs">
+          <span id="metricBodyFat" class="text-slate-600 font-semibold">體脂 28.9%</span>
+          <span id="metricLeanStatus" class="text-emerald-700 font-bold">🛡️ 安全 ≥ 60.5 kg</span>
+        </div>
+      </div>
+
+      <!-- 3. 今日活動與步數 -->
+      <div class="glass-card rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+          <span>今日步數 (寄生走路)</span>
+          <i class="ph-bold ph-sneaker-move text-emerald-600 text-base"></i>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="metricSteps" class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">6,200 步</span>
+        </div>
+        <div class="mt-1 flex items-center justify-between text-xs text-slate-500">
+          <span>W1 先記基線</span>
+          <span class="text-emerald-600 font-bold">+3,000 步目標</span>
+        </div>
+      </div>
+
+      <!-- 4. 今日自覺精力評分 -->
+      <div class="glass-card rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+          <span>今日自覺精力</span>
+          <i class="ph-bold ph-battery-charging text-purple-600 text-base"></i>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="metricEnergy" class="text-2xl sm:text-3xl font-extrabold text-purple-700 tracking-tight">8 / 10 分</span>
+        </div>
+        <div class="mt-1 flex items-center justify-between text-xs text-slate-500">
+          <span>減重期精力不應下降</span>
+          <span class="text-purple-600 font-semibold">良好充沛</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 功能模組標籤切換導航 -->
+    <div class="border-b border-slate-200 dark:border-slate-800 flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1">
+      <button data-tab-target="tab-daily" class="tab-btn active px-4 py-2.5 text-sm font-semibold rounded-lg bg-teal-600 text-white shadow-sm flex items-center gap-2 shrink-0 transition">
+        <i class="ph-bold ph-note-pencil"></i> 每日 30 秒打卡
+      </button>
+      <button data-tab-target="tab-analytics" class="tab-btn px-4 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 flex items-center gap-2 shrink-0 transition">
+        <i class="ph-bold ph-chart-line-up"></i> 趨勢圖表與每週總表
+      </button>
+      <button data-tab-target="tab-roadmap" class="tab-btn px-4 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 flex items-center gap-2 shrink-0 transition">
+        <i class="ph-bold ph-calendar-check"></i> 四週疊加養成地圖
+      </button>
+      <button data-tab-target="tab-workout" class="tab-btn px-4 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 flex items-center gap-2 shrink-0 transition">
+        <i class="ph-bold ph-barbell"></i> 居家阻力課表 & 計時器
+      </button>
+      <button data-tab-target="tab-tactics" class="tab-btn px-4 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 flex items-center gap-2 shrink-0 transition">
+        <i class="ph-bold ph-fork-knife"></i> 飲食與應酬戰略手冊
+      </button>
+      <button data-tab-target="tab-redflags" class="tab-btn px-4 py-2.5 text-sm font-medium rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 shrink-0 transition">
+        <i class="ph-bold ph-warning-octagon"></i> 就醫紅旗預警
+      </button>
+    </div>
+
+    <!-- TAB 1: 每日 30 秒打卡 (Daily Logger) -->
+    <section id="tab-daily" class="tab-pane space-y-6">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- 左側：打卡表單 (7 cols) -->
+        <div class="lg:col-span-7 glass-card rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
+                <i class="ph-bold ph-calendar-plus"></i>
+              </span>
+              <div>
+                <h2 class="text-base font-bold text-slate-900">每日 30 秒快速打卡</h2>
+                <p class="text-xs text-slate-500">晨起排尿後空腹量測，不用精算熱量，重在維持習慣</p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded bg-teal-50 text-teal-700 border border-teal-200">
+              今日目標：早餐 40g 蛋白質
+            </span>
+          </div>
+
+          <form id="dailyCheckinForm" class="space-y-4">
+            
+            <!-- 日期與日子型態 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">打卡日期</label>
+                <input type="date" id="logDate" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">今日日子型態 (雙預算制)</label>
+                <select id="logDayType" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                  <option value="平日 (1800kcal)">平日 · 1,800 kcal (蛋白質 140g)</option>
+                  <option value="應酬日 (2100kcal)">應酬日 · 2,100 kcal (三條硬規則)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 晨起體重、入睡時間、步數 -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">晨起體重 (kg)</label>
+                <input type="number" step="0.1" id="logWeight" placeholder="例: 85.8" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">昨晚入睡時間</label>
+                <input type="time" id="logSleepTime" value="23:00" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">今日步數 (手機紀錄)</label>
+                <input type="number" id="logSteps" placeholder="例: 6500" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- 今日自覺精力評分 (1-10) -->
+            <div class="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <i class="ph-bold ph-battery-vertical-full text-purple-600"></i>
+                  今日精力自覺 (1 ~ 10 分)
+                </label>
+                <span id="energyBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                  <span id="energyDisplay">8</span> 分 · 充沛良好
+                </span>
+              </div>
+              <input type="range" id="logEnergy" min="1" max="10" value="8" class="w-full accent-purple-600 h-2 bg-slate-200 rounded-lg cursor-pointer">
+              <div class="flex justify-between text-[11px] text-slate-400 mt-1 font-medium">
+                <span>1 (極度疲憊)</span>
+                <span>5 (普通)</span>
+                <span>10 (精神巔峰)</span>
+              </div>
+            </div>
+
+            <!-- 核心習慣快速勾選 -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">今日關鍵動作勾選</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                
+                <label class="flex items-start gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition">
+                  <input type="checkbox" id="habitBreakfast" class="mt-0.5 rounded text-teal-600 focus:ring-teal-500">
+                  <span class="text-xs text-slate-700 dark:text-slate-300">
+                    <strong class="text-slate-900 font-semibold">🍳 早餐 40g 蛋白質</strong><br>
+                    <span class="text-slate-500 text-[11px]">3顆蛋 + 無糖豆漿/優格/蛋白飲</span>
+                  </span>
+                </label>
+
+                <label class="flex items-start gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition">
+                  <input type="checkbox" id="habitLunchOrder" class="mt-0.5 rounded text-teal-600 focus:ring-teal-500">
+                  <span class="text-xs text-slate-700 dark:text-slate-300">
+                    <strong class="text-slate-900 font-semibold">🥗 午餐進食順序 / 減碳</strong><br>
+                    <span class="text-slate-500 text-[11px]">先吃菜與肉，最後吃澱粉 (飯減半)</span>
+                  </span>
+                </label>
+
+                <label class="flex items-start gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition">
+                  <input type="checkbox" id="habitCaffeine" class="mt-0.5 rounded text-teal-600 focus:ring-teal-500">
+                  <span class="text-xs text-slate-700 dark:text-slate-300">
+                    <strong class="text-slate-900 font-semibold">☕ 15:00 咖啡因斷點</strong><br>
+                    <span class="text-slate-500 text-[11px]">下午三點後不喝咖啡/茶/能量飲</span>
+                  </span>
+                </label>
+
+                <label class="flex items-start gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition">
+                  <input type="checkbox" id="habitSocialRules" class="mt-0.5 rounded text-purple-600 focus:ring-purple-500">
+                  <span class="text-xs text-slate-700 dark:text-slate-300">
+                    <strong class="text-purple-900 font-semibold">🍷 應酬日 3 硬規則</strong><br>
+                    <span class="text-slate-500 text-[11px]">紅酒/威士忌氣泡水≤2杯、跳過澱粉炸物</span>
+                  </span>
+                </label>
+
+                <label class="sm:col-span-2 flex items-start gap-2 p-2.5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-50 cursor-pointer transition">
+                  <input type="checkbox" id="habitWorkout" class="mt-0.5 rounded text-amber-600 focus:ring-amber-500">
+                  <span class="text-xs text-slate-700 dark:text-slate-300">
+                    <strong class="text-amber-900 font-bold">🏋️ 週二 / 週四 阻力訓練 20:30 (完成 1 次)</strong><br>
+                    <span class="text-amber-700 text-[11px]">30 分鐘 5 動作 × 3 輪 (守住 61.1kg 瘦體重)</span>
+                  </span>
+                </label>
+
+              </div>
+            </div>
+
+            <!-- 備註 -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">今日備註 / 身心感受</label>
+              <input type="text" id="logNotes" placeholder="例: 應酬喝了 1 杯紅酒，晚上散步推嬰兒車 40 分鐘，精神不錯" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            </div>
+
+            <!-- 儲存打卡按鈕 -->
+            <div class="pt-2 flex items-center justify-between">
+              <span class="text-xs text-slate-400">打卡將同步儲存於本地與 Google 試算表</span>
+              <button type="submit" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold rounded-xl shadow-md shadow-teal-600/20 flex items-center gap-2 transition">
+                <i class="ph-bold ph-floppy-disk text-base"></i> 儲存今日打卡
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- 右側：今日策略提醒與快速導航 (5 cols) -->
+        <div class="lg:col-span-5 space-y-4">
+          
+          <!-- 當週焦點 (W1) 卡片 -->
+          <div class="glass-card rounded-2xl p-5 border-l-4 border-l-teal-500 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-teal-700 uppercase tracking-wider">本週核心焦點 (W1)</span>
+              <span class="text-xs font-medium text-slate-400">8/18 ～ 8/24</span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900 mb-2">W1：建立基線，不刻意節食</h3>
+            <ul class="text-xs text-slate-600 space-y-1.5 leading-relaxed">
+              <li class="flex items-start gap-1.5">
+                <i class="ph-bold ph-check-circle text-teal-600 mt-0.5"></i>
+                <span><strong>照常飲食</strong>：只記錄晨起體重，校準真實 TDEE。</span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <i class="ph-bold ph-check-circle text-teal-600 mt-0.5"></i>
+                <span><strong>早餐 40g 蛋白質</strong>：3 顆蛋 + 無糖豆漿，保肌啟動。</span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <i class="ph-bold ph-check-circle text-teal-600 mt-0.5"></i>
+                <span><strong>步數記錄</strong>：用手機記錄基線，不強求增加。</span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <i class="ph-bold ph-check-circle text-teal-600 mt-0.5"></i>
+                <span><strong>訓練 2 次 (降階版)</strong>：週二、週四 20:30 啟動。</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 應酬日三大硬規則速查卡 -->
+          <div class="glass-card rounded-2xl p-5 border-l-4 border-l-purple-500 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-purple-700 uppercase tracking-wider">應酬日 3 大黃金硬規則</span>
+              <span class="text-xs font-extrabold text-purple-600">省 800 kcal</span>
+            </div>
+            <div class="space-y-2 text-xs text-slate-600">
+              <div class="p-2 rounded-lg bg-purple-50/60 dark:bg-purple-950/20">
+                <strong class="text-purple-900">1. 選酒：</strong> 改紅酒或威士忌無糖氣泡水，限 2 杯 (跳過啤酒與調酒)。
+              </div>
+              <div class="p-2 rounded-lg bg-purple-50/60 dark:bg-purple-950/20">
+                <strong class="text-purple-900">2. 桌菜：</strong> 先夾菜與蛋白質，跳過「主食、炸物、甜點」。
+              </div>
+              <div class="p-2 rounded-lg bg-purple-50/60 dark:bg-purple-950/20">
+                <strong class="text-purple-900">3. 預算轉移：</strong> 午餐只吃菜肉無澱粉，額度留給晚上；事後不補償性節食。
+              </div>
+            </div>
+          </div>
+
+          <!-- 瘦體重守門員提醒 -->
+          <div class="glass-card rounded-2xl p-4 bg-emerald-50/40 border border-emerald-200 text-xs text-emerald-900">
+            <div class="flex items-center gap-2 font-bold mb-1">
+              <i class="ph-bold ph-info text-emerald-600"></i>
+              成敗判準：守住 61.1 kg 瘦體重 (最低 ≥ 60.5 kg)
+            </div>
+            <p class="text-[11px] text-emerald-800 leading-relaxed">
+              若一個月後體重掉 3kg 但瘦體重跌到 59.5kg，那是失敗的減重。掉肌肉等於降低基礎代謝，為下個月復胖埋線！
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- 最近 14 筆打卡紀錄表格 -->
+      <div class="glass-card rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i class="ph-bold ph-clock-counter-clockwise text-teal-600"></i>
+            近期每日打卡紀錄
+          </h3>
+          <div class="flex items-center gap-2">
+            <button onclick="exportCSV()" class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 font-medium text-slate-600 transition flex items-center gap-1">
+              <i class="ph-bold ph-download-simple"></i> 匯出 CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr class="border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-500 uppercase">
+                <th class="py-2.5 px-3">日期</th>
+                <th class="py-2.5 px-3">體重</th>
+                <th class="py-2.5 px-3">入睡時間</th>
+                <th class="py-2.5 px-3">步數</th>
+                <th class="py-2.5 px-3">精力評分</th>
+                <th class="py-2.5 px-3">型態</th>
+                <th class="py-2.5 px-3">核心習慣</th>
+                <th class="py-2.5 px-3">備註</th>
+              </tr>
+            </thead>
+            <tbody id="dailyLogsTableBody">
+              <!-- JS 動態生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TAB 2: 數據分析與趨勢圖表 (Analytics) -->
+    <section id="tab-analytics" class="tab-pane hidden space-y-6">
+      
+      <!-- 圖表區塊 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- 體重與 7 日滑動均線折線圖 -->
+        <div class="glass-card rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">體重趨勢與 7 日滑動平均線</h3>
+              <p class="text-xs text-slate-400">只看 7 日平均，忽略單日水分正常波動 (±1.5kg)</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded bg-teal-50 text-teal-700 font-bold">目標 84.2kg</span>
+          </div>
+          <div class="h-64 sm:h-72">
+            <canvas id="weightTrendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 瘦體重 vs 脂肪重 長條堆疊圖 (每週測量) -->
+        <div class="glass-card rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">身體組成分析 (瘦體重 vs 脂肪重)</h3>
+              <p class="text-xs text-slate-400">瘦體重不可跌破 60.5 kg 紅線，缺口必須只吃脂肪</p>
+            </div>
+            <button onclick="openModal('weeklyMeasureModal')" class="text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold transition">
+              + 新增週測量
+            </button>
+          </div>
+          <div class="h-64 sm:h-72">
+            <canvas id="bodyCompChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 步數與精力評分相關性 -->
+        <div class="lg:col-span-2 glass-card rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">每日步數與精力分數雙軸趨勢</h3>
+              <p class="text-xs text-slate-400">驗證活動量增加時，精力分數是否維持在 7~10 良好區間</p>
+            </div>
+          </div>
+          <div class="h-64 sm:h-72">
+            <canvas id="energyStepsChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 每週日量測匯總表 (Section 9) -->
+      <div class="glass-card rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i class="ph-bold ph-table text-teal-600"></i>
+              每週量測表 (固定條件：週日晨起空腹、排尿後、同一機器)
+            </h3>
+            <p class="text-xs text-slate-500">優先序：1. 瘦體重 (≥60.5kg) > 2. 腰圍 (<90cm) > 3. 體重</p>
+          </div>
+          <button onclick="openModal('weeklyMeasureModal')" class="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
+            + 填寫每週日測量
+          </button>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse min-w-[750px]">
+            <thead>
+              <tr class="border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-500 uppercase bg-slate-50/50">
+                <th class="py-2.5 px-4">週次</th>
+                <th class="py-2.5 px-4">體重 (7日均)</th>
+                <th class="py-2.5 px-4">體脂率</th>
+                <th class="py-2.5 px-4">瘦體重 (守住 ≥60.5)</th>
+                <th class="py-2.5 px-4">腰圍</th>
+                <th class="py-2.5 px-4">平均步數</th>
+                <th class="py-2.5 px-4">平均入睡</th>
+                <th class="py-2.5 px-4">平均精力</th>
+              </tr>
+            </thead>
+            <tbody id="weeklySummaryTableBody">
+              <!-- JS 動態生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TAB 3: 四週養成地圖 (4-Week Roadmap) -->
+    <section id="tab-roadmap" class="tab-pane hidden space-y-6">
+      
+      <div class="glass-card rounded-2xl p-5 shadow-sm">
+        <div class="max-w-3xl mb-6">
+          <h2 class="text-base font-bold text-slate-900">四週疊加節奏總表 (一次只改一個決策點)</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            四週後你有一組不需思考的習慣，而不是一份放棄的清單。
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <!-- W1 卡片 -->
+          <div class="rounded-2xl p-4 border-2 border-teal-500 bg-teal-50/30 flex flex-col justify-between relative shadow-sm">
+            <span class="absolute top-3 right-3 px-2 py-0.5 bg-teal-600 text-white rounded text-[10px] font-bold">執行中</span>
+            <div>
+              <div class="text-xs font-bold text-teal-800">WEEK 1</div>
+              <h3 class="text-sm font-extrabold text-slate-900 mt-0.5">8/18 ～ 8/24 基線確立</h3>
+              <div class="mt-3 space-y-2 text-xs text-slate-600">
+                <div class="p-2 rounded-lg bg-white border border-teal-100">
+                  <strong class="text-teal-900">🍽️ 飲食：</strong><br>
+                  照常吃 + 記錄晨起體重；早餐吃到 40g 蛋白質。
+                </div>
+                <div class="p-2 rounded-lg bg-white border border-teal-100">
+                  <strong class="text-teal-900">🚶 活動：</strong><br>
+                  手機記錄每日步數；訓練 2 次 (降階版 5 動作)。
+                </div>
+                <div class="p-2 rounded-lg bg-white border border-teal-100">
+                  <strong class="text-teal-900">😴 睡眠：</strong><br>
+                  記錄實際入睡時間 (不強迫改變)。
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-teal-200 text-[11px] text-teal-800 font-semibold">
+              🎯 檢核點：建立真實 TDEE 與步數基線
+            </div>
+          </div>
+
+          <!-- W2 卡片 -->
+          <div class="rounded-2xl p-4 border border-slate-200 bg-white flex flex-col justify-between">
+            <div>
+              <div class="text-xs font-bold text-slate-400">WEEK 2</div>
+              <h3 class="text-sm font-extrabold text-slate-900 mt-0.5">8/25 ～ 8/31 雙預算與酒</h3>
+              <div class="mt-3 space-y-2 text-xs text-slate-600">
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <strong class="text-slate-900">🍽️ 飲食：</strong><br>
+                  啟動雙預算制 + 應酬規則 1 (改紅酒/威士忌氣泡水限2杯)。
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <strong class="text-slate-900">🚶 活動：</strong><br>
+                  步數 +1,500 步；訓練 2 次 (降階版)。
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <strong class="text-slate-900">😴 睡眠：</strong><br>
+                  入睡收斂到 23:00 ± 30 分。
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-purple-700 font-semibold">
+              🎯 檢核點：驗證週日體脂率，瘦體重是否守住
+            </div>
+          </div>
+
+          <!-- W3 卡片 -->
+          <div class="rounded-2xl p-4 border border-slate-200 bg-white flex flex-col justify-between">
+            <div>
+              <div class="text-xs font-bold text-slate-400">WEEK 3</div>
+              <h3 class="text-sm font-extrabold text-slate-900 mt-0.5">9/01 ～ 9/07 降碳與咖啡因</h3>
+              <div class="mt-3 space-y-2 text-xs text-slate-600">
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <strong class="text-slate-900">🍽️ 飲食：</strong><br>
+                  + 應酬規則 2、3 + 午餐澱粉減半 (菜肉先吃)。
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <strong class="text-slate-900">🚶 活動：</strong><br>
+                  步數 +3,000 步 (達標)；訓練 2 次 (進階版)。
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <strong class="text-slate-900">😴 睡眠：</strong><br>
+                  咖啡因 15:00 斷點。
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-amber-700 font-semibold">
+              🎯 檢核點：體重若停滯屬正常，看腰圍與精力
+            </div>
+          </div>
+
+          <!-- W4 卡片 -->
+          <div class="rounded-2xl p-4 border border-slate-200 bg-white flex flex-col justify-between">
+            <div>
+              <div class="text-xs font-bold text-slate-400">WEEK 4</div>
+              <h3 class="text-sm font-extrabold text-slate-900 mt-0.5">9/08 ～ 9/14 穩定與回顧</h3>
+              <div class="mt-3 space-y-2 text-xs text-slate-600">
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <strong class="text-slate-900">🍽️ 飲食：</strong><br>
+                  全部維持，不新增複雜規矩。
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <strong class="text-slate-900">🚶 活動：</strong><br>
+                  維持步數；訓練 2 次 (進階版)。
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <strong class="text-slate-900">😴 睡眠：</strong><br>
+                  全面維持，回顧 4 週數據。
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-emerald-700 font-semibold">
+              🎯 目標：體重 84.2~84.6kg，瘦體重 ≥ 60.5kg
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- TAB 4: 居家阻力課表 & 計時器 (Workout Guide) -->
+    <section id="tab-workout" class="tab-pane hidden space-y-6">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- 左側：動作課表 (8 cols) -->
+        <div class="lg:col-span-8 glass-card rounded-2xl p-5 shadow-sm space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">每週 2 次居家阻力訓練課表</h2>
+              <p class="text-xs text-slate-500">固定時段：週二、週四 20:30–21:00 (21:00結束 → 23:00就寢)</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded bg-amber-100 text-amber-800 font-bold">保肌任務 · 勿練到力竭</span>
+          </div>
+
+          <!-- W1~W2 降階版 -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">W1–W2 降階版 (5 動作 × 3 輪，動作間休息 60 秒)</h3>
+            
+            <div class="grid grid-cols-1 gap-2.5">
+              
+              <!-- 動作 1 -->
+              <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">1</span>
+                  <div>
+                    <h4 class="text-sm font-bold text-slate-900">椅式深蹲 (Chair Squat)</h4>
+                    <p class="text-xs text-slate-500">坐到椅子輕觸再站起 · 下肢 · 86kg下膝關節保險</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm font-bold text-teal-700">12 下</span>
+                  <div class="text-[10px] text-slate-400">3 組</div>
+                </div>
+              </div>
+
+              <!-- 動作 2 -->
+              <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">2</span>
+                  <div>
+                    <h4 class="text-sm font-bold text-slate-900">斜面伏地挺身 (Incline Push-Up)</h4>
+                    <p class="text-xs text-slate-500">手撐桌沿或牆面 · 胸/肩/三頭 · 撐越高越輕鬆</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm font-bold text-teal-700">10–12 下</span>
+                  <div class="text-[10px] text-slate-400">3 組</div>
+                </div>
+              </div>
+
+              <!-- 動作 3 -->
+              <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">3</span>
+                  <div>
+                    <h4 class="text-sm font-bold text-slate-900">划船 (Rowing)</h4>
+                    <p class="text-xs text-slate-500">啞鈴 / 彈力帶 / 水瓶 · 上背 · 改善久坐圓肩</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm font-bold text-teal-700">12 下</span>
+                  <div class="text-[10px] text-slate-400">3 組</div>
+                </div>
+              </div>
+
+              <!-- 動作 4 -->
+              <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">4</span>
+                  <div>
+                    <h4 class="text-sm font-bold text-slate-900">臀橋 (Glute Bridge)</h4>
+                    <p class="text-xs text-slate-500">平躺屈膝抬臀 · 臀與腿後 · 護腰改善久坐</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm font-bold text-teal-700">15 下</span>
+                  <div class="text-[10px] text-slate-400">3 組</div>
+                </div>
+              </div>
+
+              <!-- 動作 5 -->
+              <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">5</span>
+                  <div>
+                    <h4 class="text-sm font-bold text-slate-900">棒式 (Plank，可跪姿)</h4>
+                    <p class="text-xs text-slate-500">核心 · 撐不住就跪姿，切記不要憋氣</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm font-bold text-teal-700">20–30 秒</span>
+                  <div class="text-[10px] text-slate-400">3 組</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- W3~W4 進階版提示 -->
+          <div class="pt-3 border-t border-slate-200">
+            <details class="text-xs text-slate-600">
+              <summary class="font-bold text-slate-800 cursor-pointer hover:text-teal-600">查看 W3–W4 進階版課表 (+強度提升)</summary>
+              <div class="mt-2 space-y-1 pl-3 border-l-2 border-slate-300">
+                <p>• 徒手深蹲 (不碰椅子) × 15 下</p>
+                <p>• 伏地挺身 (手撐高度降低) × 12 下</p>
+                <p>• 划船 × 15 下或增加負重</p>
+                <p>• 臀橋 (單腳或負重) × 12 下/邊</p>
+                <p>• 棒式 × 45 秒</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+
+        <!-- 右側：休息計時器與原則 (4 cols) -->
+        <div class="lg:col-span-4 space-y-4">
+          
+          <!-- 60 秒休息計時器 -->
+          <div class="glass-card rounded-2xl p-5 shadow-sm text-center">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">動作間休息計時器</span>
+            <div id="timerDisplay" class="text-5xl font-extrabold text-teal-700 my-4 font-mono tracking-tight">
+              00:60
+            </div>
+            <div class="flex gap-2">
+              <button id="timerToggleBtn" class="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow transition">
+                ▶ 開始 60 秒休息計時
+              </button>
+              <button id="timerResetBtn" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition">
+                重設
+              </button>
+            </div>
+          </div>
+
+          <!-- 強度核心準則 -->
+          <div class="glass-card rounded-2xl p-4 space-y-2 text-xs text-slate-600">
+            <h4 class="font-bold text-slate-900 flex items-center gap-1.5">
+              <i class="ph-bold ph-shield-alert text-amber-500"></i>
+              強度標準：留 2~3 下力竭餘裕
+            </h4>
+            <p><strong>不要練到力竭。</strong> 48 歲力竭訓練會偷走隔天工作精力，與計畫目標衝突。</p>
+            <p><strong>成功標準：</strong>8 次訓練中完成 ≥ 6 次 (75%) 即達標。留兩次給突發會議與加班。</p>
+          </div>
+
+          <!-- 寄生走路技巧 -->
+          <div class="glass-card rounded-2xl p-4 space-y-2 text-xs text-slate-600 bg-emerald-50/50 border border-emerald-100">
+            <h4 class="font-bold text-emerald-900 flex items-center gap-1.5">
+              <i class="ph-bold ph-baby text-emerald-600"></i>
+              最高投報率：週末推嬰兒車
+            </h4>
+            <p>週末推 18 個月女兒散步 40–60 分鐘，增加 4,000–6,000 步 (消耗 250~300 kcal)，相當於一次完整重訓，且兼顧陪伴！</p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- TAB 5: 飲食與應酬戰略 (Nutrition & Social Tactics) -->
+    <section id="tab-tactics" class="tab-pane hidden space-y-6">
+      
+      <!-- 雙預算制對比卡片 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- 平日 1,800 kcal -->
+        <div class="glass-card rounded-2xl p-5 shadow-sm border-t-4 border-t-teal-500">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-bold text-slate-900">平日預算 (每週 4–5 天)</h3>
+            <span class="text-xs px-2.5 py-1 rounded bg-teal-50 text-teal-800 font-bold">1,800 kcal · 可完全掌控</span>
+          </div>
+          
+          <div class="space-y-3 text-xs text-slate-600">
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="p-2.5 rounded-xl bg-teal-50/60">
+                <span class="text-slate-500 block">蛋白質</span>
+                <strong class="text-teal-800 text-sm">140 g</strong>
+                <span class="text-[10px] text-slate-400 block">2.3g/kg 瘦體重</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-amber-50/60">
+                <span class="text-slate-500 block">脂肪 (不可更低)</span>
+                <strong class="text-amber-800 text-sm">65 g</strong>
+                <span class="text-[10px] text-slate-400 block">睪固酮合成</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-blue-50/60">
+                <span class="text-slate-500 block">碳水化合物</span>
+                <strong class="text-blue-800 text-sm">165 g</strong>
+                <span class="text-[10px] text-slate-400 block">放早餐與訓練</span>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5">
+              <h4 class="font-bold text-slate-800">蛋白質 140g 拆解 (記份量，不用算)：</h4>
+              <p>• <strong>早餐 (40g)：</strong>3 顆蛋 + 無糖豆漿 / 希臘優格 / 蛋白飲</p>
+              <p>• <strong>午餐 (40g)：</strong>手掌大小肉或魚 × 1.5 份</p>
+              <p>• <strong>晚餐 (40g)：</strong>手掌大小肉或魚 × 1.5 份</p>
+              <p>• <strong>補充 (20g)：</strong>無糖優格、水煮蛋或蛋白粉</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 應酬日 2,100 kcal -->
+        <div class="glass-card rounded-2xl p-5 shadow-sm border-t-4 border-t-purple-500">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-bold text-slate-900">應酬日預算 (每週 2–3 天)</h3>
+            <span class="text-xs px-2.5 py-1 rounded bg-purple-50 text-purple-800 font-bold">2,100 kcal · 靠 3 條硬規則</span>
+          </div>
+
+          <div class="space-y-2.5 text-xs text-slate-600">
+            <div class="p-3 rounded-xl bg-purple-50/60 border border-purple-100">
+              <strong class="text-purple-950 block mb-0.5">規則 1：酒——最多 2 杯，選紅酒或威士忌氣泡水</strong>
+              <span class="text-slate-600">啤酒 500ml 約 200kcal；調酒 250~400kcal。改紅酒 (125kcal) 或威士忌加無糖氣泡水 (100kcal)，單項一晚省 400~800 kcal！</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-purple-50/60 border border-purple-100">
+              <strong class="text-purple-950 block mb-0.5">規則 2：桌菜——跳過「主食、炸物、甜點」</strong>
+              <span class="text-slate-600">先夾蔬菜與蛋白質肉類，跳過飯麵包子、油炸物與甜品。熱量密度最高、飽足感最低的部分自動排除。</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-purple-50/60 border border-purple-100">
+              <strong class="text-purple-950 block mb-0.5">規則 3：白天預算轉移 + 事後不補償節食</strong>
+              <span class="text-slate-600">應酬日午餐只吃菜肉不吃澱粉 (省 300~400 kcal 留給晚上)。隔天正常吃 1,800 kcal，絕不刻意少吃。</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- TAB 6: 紅旗就醫預警 (Red Flags) -->
+    <section id="tab-redflags" class="tab-pane hidden space-y-6">
+      
+      <div class="glass-card rounded-2xl p-6 border-2 border-rose-300 bg-rose-50/30 shadow-sm space-y-4">
+        <div class="flex items-center gap-3 text-rose-700">
+          <i class="ph-bold ph-warning-octagon text-3xl"></i>
+          <div>
+            <h2 class="text-lg font-bold">健康安全紅旗：出現以下情況，立即停止計畫並就醫</h2>
+            <p class="text-xs text-rose-600">身體健康與安全為一切的前提與基石</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-700 pt-2">
+          
+          <div class="p-3.5 rounded-xl bg-white border border-rose-200 space-y-1">
+            <h4 class="font-bold text-rose-900">1. 心血管與運動異常徵兆</h4>
+            <p>• 運動中或運動後出現<strong>胸悶、胸痛、異常劇烈喘氣、頭暈、心悸</strong>。</p>
+            <p>• 晨起或靜止血壓持續 <strong>≥ 140/90 mmHg</strong>。</p>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-white border border-rose-200 space-y-1">
+            <h4 class="font-bold text-rose-900">2. 體重非預期異常驟降</h4>
+            <p>• 非刻意節食下的體重急速下滑 (<strong>單月下降 > 4.3 kg</strong>)。</p>
+            <p>• 連續兩週瘦體重急遽下跌 (> 1.0 kg)。</p>
+          </div>
+
+          <div class="md:col-span-2 p-3.5 rounded-xl bg-white border border-rose-200 space-y-1">
+            <h4 class="font-bold text-rose-900">3. 睡眠呼吸中止症風險評估</h4>
+            <p>• 白天出現嚴重嗜睡、注意力無法集中。</p>
+            <p>• 睡眠中被家人目擊<strong>呼吸暫停、突然嗆醒或極為嚴重的打鼾</strong>。</p>
+            <p class="text-rose-700 font-semibold pt-1">
+              → 建議立即至醫院睡眠中心安排睡眠多項生理檢查 (PSG)。48 歲、體脂 28.9% 屬風險族群，此項目優先於本計畫全部內容。
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 頁尾 -->
+  <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+      <div>
+        <span>David 精力維持計畫 v1.0 · 定版可直接執行</span>
+        <span class="mx-2">|</span>
+        <span>計畫期間：2026-08-18 ～ 2026-09-14</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="openModal('gasSyncModal')" class="hover:text-teal-600 transition">Google Sheets 設定</button>
+        <span>•</span>
+        <button onclick="exportCSV()" class="hover:text-teal-600 transition">匯出 CSV 紀錄</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. 每週日體脂量測 Modal -->
+  <div id="weeklyMeasureModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="glass-card bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+            <i class="ph-bold ph-scales text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">每週日體脂固定量測</h3>
+            <p class="text-xs text-slate-400">固定條件：晨起排尿後、空腹未喝水、同一機器</p>
+          </div>
+        </div>
+        <button onclick="closeModal('weeklyMeasureModal')" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <form id="weeklyMeasureForm" class="space-y-3">
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">週次</label>
+            <select id="weeklyWeekName" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300">
+              <option value="W1 (8/24測)">W1 (第 1 週結束)</option>
+              <option value="W2 (8/31測)">W2 (第 2 週結束 · 關鍵中期)</option>
+              <option value="W3 (9/07測)">W3 (第 3 週結束)</option>
+              <option value="W4 (9/14測)">W4 (第 4 週成果驗證)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">量測日期</label>
+            <input type="date" id="weeklyLogDate" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">7 日平均體重 (kg)</label>
+            <input type="number" step="0.1" id="weeklyAvgWeight" placeholder="例: 85.5" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">體脂計體脂率 (%)</label>
+            <input type="number" step="0.1" id="weeklyBf" placeholder="例: 28.5" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300">
+          </div>
+        </div>
+
+        <!-- 自動計算瘦體重顯示 -->
+        <div class="p-3 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between text-xs">
+          <span class="text-teal-900 font-bold">自動計算瘦體重：</span>
+          <span id="calculatedLeanMassDisplay" class="font-extrabold text-sm text-teal-800">-- kg</span>
+          <input type="hidden" id="weeklyLeanMass">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">腰圍 (cm)</label>
+            <input type="number" step="0.5" id="weeklyWaist" placeholder="例: 91.0" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">本週平均步數 (步/日)</label>
+            <input type="number" id="weeklyAvgSteps" placeholder="例: 7500" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">平均入睡時間</label>
+            <input type="text" id="weeklyAvgSleep" placeholder="例: 23:10" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">平均精力分數 (1-10)</label>
+            <input type="number" step="0.1" min="1" max="10" id="weeklyAvgEnergy" placeholder="例: 8.0" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">本週執行備註 / 心得</label>
+          <input type="text" id="weeklyNotes" placeholder="例: 應酬兩次皆選紅酒，精神良好，步數達成" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300">
+        </div>
+
+        <div class="pt-3 flex gap-2">
+          <button type="button" onclick="closeModal('weeklyMeasureModal')" class="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-600 text-xs font-bold hover:bg-slate-50 transition">
+            取消
+          </button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow transition">
+            儲存每週數據
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Google Sheets 同步設定 Modal -->
+  <div id="gasSyncModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="glass-card bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-xl w-full shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
+            <i class="ph-bold ph-google-logo text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Google Sheets 雲端雙向同步設定</h3>
+            <p class="text-xs text-slate-400">透過 Google Apps Script 免費安全存取您的個人試算表</p>
+          </div>
+        </div>
+        <button onclick="closeModal('gasSyncModal')" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600">
+        
+        <div>
+          <label class="block font-bold text-slate-800 mb-1">Google Apps Script Web App 網址 (URL)：</label>
+          <input type="url" id="gasApiUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
+        </div>
+
+        <div class="flex flex-wrap gap-2 pt-1">
+          <button id="saveGasUrlBtn" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow-sm transition">
+            儲存網址
+          </button>
+          <button id="testGasBtn" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition">
+            連線測試
+          </button>
+          <button id="pullGasBtn" class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium rounded-lg transition">
+            從雲端拉取歷史
+          </button>
+          <button id="pushGasBtn" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium rounded-lg transition">
+            推送本地至雲端
+          </button>
+        </div>
+
+        <!-- 3 步驟圖文教學折疊卡片 -->
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 mt-4">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800">📌 第一次使用？3 步驟建立 Google 試算表同步：</span>
+            <button id="copyGasCodeBtn" class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-md font-bold text-[11px] shadow-sm transition">
+              📋 複製 GAS 腳本代碼
+            </button>
+          </div>
+          <ol class="list-decimal list-inside space-y-1 text-slate-600 leading-relaxed text-[11px]">
+            <li>在 Google Drive 建立一個全新的 <strong>Google 試算表</strong>。</li>
+            <li>點擊上方選單 <strong>「擴充功能」->「Apps Script」</strong>。</li>
+            <li>清除預設代碼，貼上本專案 <code>GoogleAppsScript.js</code> 代碼並儲存。</li>
+            <li>點擊右上角 <strong>「部署」->「新增部署作業」</strong>（種類選 <strong>網頁應用程式</strong>，存取權限選 <strong>所有人</strong>）。</li>
+            <li>複製產生的網址，貼回上方輸入框並點擊「儲存網址」即可！</li>
+          </ol>
+        </div>
+
+      </div>
+
+      <div class="pt-2">
+        <button type="button" onclick="closeModal('gasSyncModal')" class="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+          關閉
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 提示訊息容器 -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 max-w-sm pointer-events-none"></div>
+
+  <!-- 應用程式主邏輯腳本 -->
+  <script src="app.js"></script>
+</body>
+</html>
